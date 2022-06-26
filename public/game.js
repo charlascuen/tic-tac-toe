@@ -10,15 +10,16 @@ function getPlayerFigure(playerIndex) {
 
 function createBoard(board) {
 	const table = document.createElement('table');
-	for (let rowIndex in board) {
-		const row = board[rowIndex];
+	for (let row in board) {
 		const tr = document.createElement('tr');
-		for (let cellIndex in row) {
-			const cell = row[cellIndex];
+		for (let column in board[row]) {
+			const cell = board[row][column];
 			const td = document.createElement('td');
+			
 			if (cell != null) {
 				td.appendChild(getPlayerFigure(cell));
 			}
+
 			tr.appendChild(td);
 		}
 		table.appendChild(tr);
@@ -30,5 +31,4 @@ document.addEventListener('DOMContentLoaded', () => {
 	const gameState = Server.getGameState();
 	const {board} = gameState;
 	createBoard(board);
-	Server.placePiece(0, 0, 0);
 });
