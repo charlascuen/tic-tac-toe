@@ -1,0 +1,10 @@
+td {
+	border: solid 1px black;
+	width: 30px;
+	height: 30px;
+	text-align: center;
+}
+
+td img {
+	width: 20px;
+}
