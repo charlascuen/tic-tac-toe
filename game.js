@@ -50,6 +50,13 @@ router.post('/', (req, res) => {
 	store.games[game.id] = game;
 	Store.saveStore(store);
 
+	if(!req.session.gamesPlaying) {
+		req.session.gamesPlaying = {};
+	}
+	req.session.gamesPlaying[game.id] = {
+		playerIndex: 0,
+	};
+	console.log(req.session);
 	res.send({game});
 });
 
