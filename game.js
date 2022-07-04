@@ -170,6 +170,144 @@ router.post('/:gameId/start', (req, res) => {
 	});
 });
 
+router.post('/:gameId/place-piece', (req, res) => {
+	if (!req.session.gamesPlaying?.[req.params.gameId]) {
+		throw new Error('You are not playing this game');
+	}
+
+	const store = Store.getStore();
+
+	const game = store.games[req.params.gameId];
+
+	if (!game) {
+		throw new Error('This game does not exist');
+	}
+
+	if (game.state !== STATES.PLAYING) {
+		throw new Error('Game is not in PLAYING state');
+	}
+
+	const playerIndex = req.session.gamesPlaying?.[req.params.gameId].playerIndex;
+
+	if (game.turns[game.turn] !== playerIndex) {
+		throw new Error('It is not your turn');
+	}
+
+	const { board } = game;
+
+	const currentPlayerIndex = game.turns[game.turn];
+	
+	if (currentPlayerIndex !== playerIndex) {
+		throw new Error('It is not your turn');
+	}
+
+	const {row, column} = req.body;
+
+	if (board[row][column] !== null) {
+		throw new Error('This cell is already occupied');
+	}
+
+	board[row][column] = playerIndex;
+	if (playerWon(playerIndex, board, game.config.goal)) {
+		game.winner = playerIndex;
+		game.state = STATES.ENDED;
+		saveGameState(game);
+		return game;
+	}
+
+	if (boardIsFull(board)) {
+		game.state = STATES.ENDED;
+		saveGameState(game);
+		return game;
+	}
+
+	game.turn++;
+	if (game.turn >= game.turns.length) {
+		game.turn = 0;
+	}
+
+	Store.saveStore(store);
+	
+	res.send({
+		game: store.game,
+		playerIndex: game.players.length - 1,
+	});
+});
+
+function playerWon(playerIndex, board, goal) {
+	const boardState = JSON.parse(JSON.stringify(board)).map(row => row.map(cell => ({
+		player: cell === playerIndex ? playerIndex : null,
+		checked: {
+			bottom: null,
+			right: null,
+			diag: null,
+		}
+	})));
+
+	const DIRECTIONS = {
+		bottom: [1, 0],
+		right: [0, 1],
+		diag: [1, 1],
+	};
+
+	function getDirectionPieces(directionName, boardState, row, column, currentCount) {
+		const direction = DIRECTIONS[directionName];
+		const nextRow = row + direction[0];
+		const nextColumn = column + direction[1];
+		
+		if (nextRow >= boardState.length) {
+			return currentCount;
+		}
+
+		if (nextColumn >= boardState[nextRow].length) {
+			return currentCount;
+		}
+
+		const nextCell = boardState[nextRow][nextColumn];
+		if (!nextCell.player) {
+			return currentCount;
+		}
+
+		nextCell.checked[directionName] = true;
+
+		return getDirectionPieces(directionName, boardState, nextRow, nextColumn, currentCount + 1);
+	}
+
+	for (const row in boardState) {
+		for (const column in boardState[row]) {
+			const cellState = boardState[row][column];
+			if (!cellState.player) {
+				continue;
+			}
+
+			for (const directionName in DIRECTIONS) {
+				const direction = DIRECTIONS[directionName];
+				if (cellState.checked[directionName]) {
+					continue;
+				}
+				const pieces = getDirectionPieces(directionName, boardState, row, column, 1);
+				if (pieces >= goal) {
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+
+function boardIsFull(board) {
+	for (const row in board) {
+		for (const column in board[row]) {
+			if (board[row][column] === null) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 function getRandomInt(min, max) {
 	return Math.floor(Math.random() * (max - min)) + min;
 }
