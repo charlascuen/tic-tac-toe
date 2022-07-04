@@ -60,6 +60,10 @@ router.post('/', (req, res) => {
 	res.send({game});
 });
 
+function getRandomInt(min, max) {
+	return Math.floor(Math.random() * (max - min)) + min;
+}
+
 router.get('/all', (req, res) => {
 	const gamesIds = Object.keys(req.session.gamesPlaying) ?? [];
 
