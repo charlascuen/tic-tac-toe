@@ -36,16 +36,6 @@ router.post('/', (req, res) => {
 		game.board.push((new Array(game.config.size)).fill(null));
 	}
 
-	const tmpTurns = [];
-	for (let i = 0; i < game.config.nPlayers; i++) {
-		tmpTurns.push(i);
-	}
-
-	while (tmpTurns.length > 0) {
-		const i = getRandomInt(0, tmpTurns.length);
-		game.turns.push(...tmpTurns.splice(i, 1));
-	}
-
 	const store = Store.getStore();
 	store.games[game.id] = game;
 	Store.saveStore(store);
@@ -59,10 +49,6 @@ router.post('/', (req, res) => {
 	console.log(req.session);
 	res.send({game});
 });
-
-function getRandomInt(min, max) {
-	return Math.floor(Math.random() * (max - min)) + min;
-}
 
 router.get('/all', (req, res) => {
 	const gamesIds = Object.keys(req.session.gamesPlaying) ?? [];
@@ -128,7 +114,7 @@ router.post('/:gameId/join', (req, res) => {
 		name: playerName,
 	};
 
-	store.game.players.push(player);
+	game.players.push(player);
 
 	req.session.gamesPlaying[req.params.gameId] = {
 		playerIndex: game.players.length - 1,
@@ -141,6 +127,52 @@ router.post('/:gameId/join', (req, res) => {
 		playerIndex: game.players.length - 1,
 	});
 });
+
+router.post('/:gameId/start', (req, res) => {
+	if (!req.session.gamesPlaying?.[req.params.gameId]) {
+		throw new Error('You are not playing this game');
+	}
+
+	if (req.session.gamesPlaying?.[req.params.gameId].playerIndex !== 0) {
+		throw new Error('You are can not start this game');
+	}
+
+	const store = Store.getStore();
+
+	const game = store.games[req.params.gameId];
+
+	if (!game) {
+		throw new Error('This game does not exist');
+	}
+
+	if (game.state !== STATES.IDLE) {
+		throw new Error('This game is already started');
+	}
+
+	const tmpTurns = [];
+	for (let i = 0; i < game.players.length; i++) {
+		tmpTurns.push(i);
+	}
+
+	while (tmpTurns.length > 0) {
+		const i = getRandomInt(0, tmpTurns.length);
+		game.turns.push(...tmpTurns.splice(i, 1));
+	}
+
+	game.state = STATES.PLAYING;
+	game.turn = 0;
+
+	Store.saveStore(store);
+	
+	res.send({
+		game: store.game,
+		playerIndex: game.players.length - 1,
+	});
+});
+
+function getRandomInt(min, max) {
+	return Math.floor(Math.random() * (max - min)) + min;
+}
 
 module.exports = {
 	router,

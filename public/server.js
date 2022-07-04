@@ -30,6 +30,13 @@ function createGame(config, firstPlayer) {
 	return await res.json();
 }
 
+function startGame(gameId) {
+	const res = await fetch(`/api/game/${gameId}`, {
+		method: 'POST',
+	});
+	return await res.json();
+}
+
 // Comprobar si le toca jugar al jugador
 // Comprobar si se puede òner una ficha
 // Si al poner la ficha, ese jugador ha ganado
@@ -156,4 +163,4 @@ function getFigures() {
 	return FIGURES;
 }
 
-export { getFigures, getAllGames, getGameState, createGame, getGameState, placePiece };
+export { getFigures, getAllGames, getGameState, createGame, startGame, placePiece };
