@@ -60,6 +60,39 @@ router.post('/', (req, res) => {
 	res.send({game});
 });
 
+router.get('/all', (req, res) => {
+	const gamesIds = Object.keys(req.session.gamesPlaying) ?? [];
+
+	const store = Store.getStore();
+
+	const games = gamesIds.map(id => ({
+		game: store.games[id],
+		playerIndex: req.session.gamesPlaying[id].playerIndex,
+	}));
+	
+	res.send({
+		games: games,
+	});
+});
+
+router.get('/:gameId', (req, res) => {
+	if (!req.session.gamesPlaying?.[req.params.gameId]) {
+		throw new Error('You are not playing this game');
+	}
+
+	const store = Store.getStore();
+
+	if (!store.games[req.params.gameId]) {
+		delete req.session.gamesPlaying[req.params.gameId];
+		throw new Error('This game does not exist');
+	}
+	
+	res.send({
+		game: store.games[req.params.gameId],
+		playerIndex: req.session.gamesPlaying[req.params.gameId].playerIndex,
+	});
+});
+
 module.exports = {
 	router,
 }
