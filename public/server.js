@@ -1,5 +1,3 @@
-let _gameState = null;
-
 const STATES = {
 	IDLE: 0,
 	PLAYING: 1,
@@ -8,68 +6,28 @@ const STATES = {
 
 const FIGURES = ["cross", "circle", "square", "plus", "star"];
 
-function saveData(key, data) {
-	localStorage.setItem(key, JSON.stringify(data));
+async function getAllGames() {
+	const res = await fetch('/api/game/all', { method: 'GET' });
+	return await res.json();
 }
 
-function loadData(key) {
-	let data = localStorage.getItem(key);
-	if (!data) {
-		return null;
-	}
-
-	return JSON.parse(data);
-}
-
-function saveGameState(state) {
-	_gameState = state;
-	saveData('gameState', state);
-}
-
-function loadGameState() {
-	_gameState = loadData('gameState');
-}
-
-function getGameState() {
-	return _gameState;
+async function getGameState(gameId) {
+	const res = await fetch(`/api/game/${gameId}`, { method: 'GET' });
+	return await res.json();
 }
 
 function createGame(config, firstPlayer) {
-	if (config.nPlayers > 5) {
-		throw new Error('Too many players');
-	}
-	let gameState = {
-		config: {
-			...config
+	const res = await fetch('/api/game', {
+		method: 'POST',
+		headers: {
+			"Content-Type": "application/json"
 		},
-		board: [],
-		players: [
-			{ ...firstPlayer }
-		],
-		state: STATES.PLAYING,
-		winner: null,
-		turn: 0,
-		turns: [],
-	};
-
-	gameState.players.push({...firstPlayer})
-
-	for (let i = 0; i < gameState.config.size; i++) {
-		gameState.board.push((new Array(gameState.config.size)).fill(null));
-	}
-
-	const tmpTurns = [];
-	for (let i = 0; i < gameState.config.nPlayers; i++) {
-		tmpTurns.push(i);
-	}
-
-	while (tmpTurns.length > 0) {
-		const i = getRandomInt(0, tmpTurns.length);
-		gameState.turns.push(...tmpTurns.splice(i, 1));
-	}
-
-	saveGameState(gameState);
-	return gameState;
+		body: JSON.stringify({
+			config,
+			firstPlayer,
+		})
+	});
+	return await res.json();
 }
 
 // Comprobar si le toca jugar al jugador
@@ -194,14 +152,8 @@ function boardIsFull(board) {
 	return true;
 }
 
-function getRandomInt(min, max) {
-	return Math.floor(Math.random() * (max - min)) + min;
-}
-
 function getFigures() {
 	return FIGURES;
 }
 
-loadGameState();
-
-export { getFigures, createGame, getGameState, placePiece };
+export { getFigures, getAllGames, getGameState, createGame, getGameState, placePiece };
