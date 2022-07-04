@@ -93,6 +93,51 @@ router.get('/:gameId', (req, res) => {
 	});
 });
 
+router.post('/:gameId/join', (req, res) => {
+	if (req.session.gamesPlaying?.[req.params.gameId]) {
+		throw new Error('You are already playing this game');
+	}
+
+	const store = Store.getStore();
+
+	const game = store.games[req.params.gameId];
+
+	if (!game) {
+		throw new Error('This game does not exist');
+	}
+
+	if (game.state !== STATES.IDLE) {
+		throw new Error('This game is already started');
+	}
+
+	if (game.players.length >= game.config.nPlayers) {
+		throw new Error('This game is full');
+	}
+
+	const { playerName } = req.body;
+
+	if (game.players.find(player => player.name.toLowerCase() === playerName.toLowerCase())) {
+		throw new Error('This player is already in this game');
+	}
+
+	const player = {
+		name: playerName,
+	};
+
+	store.game.players.push(player);
+
+	req.session.gamesPlaying[req.params.gameId] = {
+		playerIndex: game.players.length - 1,
+	};
+
+	Store.saveStore(store);
+	
+	res.send({
+		game: store.game,
+		playerIndex: game.players.length - 1,
+	});
+});
+
 module.exports = {
 	router,
 }
