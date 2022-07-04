@@ -1,10 +1,12 @@
-const express = require('express')
-const app = express()
-const port = 8080
+const express = require('express');
 
-app.get('/', (req, res) => {
-	res.send('Hello World!')
-})
+const game = require('./game');
+const app = express();
+const port = 8080;
+
+app.use(express.json());
+
+app.use('/api/game', game.router);
 
 app.use(express.static('public'));
 
