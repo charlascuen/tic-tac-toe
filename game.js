@@ -1,5 +1,7 @@
-const Store = require('./store');
 const express = require('express');
+
+const Store = require('./store');
+const { CustomError } = require('./error');
 
 const STATES = {
 	IDLE: 0,
@@ -17,7 +19,7 @@ router.post('/', (req, res) => {
 	const {config, firstPlayer} = req.body;
 
 	if (config.nPlayers > 5) {
-		throw new Error('Too many players');
+		throw new CustomError('Too many players', 'too-many-players', 400);
 	}
 	let game = {
 		id: getRandomId(),

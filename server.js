@@ -1,6 +1,7 @@
 const express = require('express');
 const session = require('express-session');
 
+const { CustomError } = require('./error');
 const game = require('./game');
 const app = express();
 const port = 8080;
@@ -21,10 +22,15 @@ app.use((req, res, next) => {
 app.use('/api/game', game.router);
 
 app.use((err, req, res, next) => {
-	console.error(err);
-	res.status(500).send({
-		error: err.message,
-	});
+	if (err instanceof CustomError) {
+		return res.status(err.httpStatus).send({
+			error: {
+				message: err.message,
+				code: err.code,
+			}
+		});
+	}
+	next(err);
 });
 
 app.use(express.static('public'));
