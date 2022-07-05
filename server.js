@@ -20,6 +20,13 @@ app.use((req, res, next) => {
 
 app.use('/api/game', game.router);
 
+app.use((err, req, res, next) => {
+	console.error(err);
+	res.status(500).send({
+		error: err.message,
+	});
+});
+
 app.use(express.static('public'));
 
 app.listen(port, () => {
