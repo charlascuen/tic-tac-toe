@@ -9,9 +9,14 @@ app.use(session({
 	secret: 'keyboard cat',
 	resave: true,
 	saveUninitialized: true
-}))
+}));
 
 app.use(express.json());
+
+app.use((req, res, next) => {
+	console.log(req.method, req.url, new Date());
+	next();
+});
 
 app.use('/api/game', game.router);
 
